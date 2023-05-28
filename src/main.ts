@@ -1,6 +1,6 @@
-import EpubFile, {EpubChapter, EpubSettings} from '@cd-z/epub-constructor';
-import * as fs from 'expo-file-system';
-import {zip} from 'react-native-zip-archive';
+import EpubFile, { EpubChapter, EpubSettings } from "@cd-z/epub-constructor";
+import * as fs from "expo-file-system";
+import { zip } from "react-native-zip-archive";
 import {
   exists,
   mkdir,
@@ -8,10 +8,10 @@ import {
   openDocumentTree,
   unlink,
   writeFile,
-} from 'react-native-saf-x';
+} from "react-native-saf-x";
 
 const getEpubfileName = (name: string) => {
-  return name.endsWith('.epub') ? name : name + '.epub';
+  return name.endsWith(".epub") ? name : name + ".epub";
 };
 
 const validateDir = async (path: string) => {
@@ -27,28 +27,28 @@ const removeDir = async (path: string) => {
 };
 
 const checkFile = (path: string) => {
-  var name = path.split('/').reverse()[0].toLocaleLowerCase();
+  var name = path.split("/").reverse()[0].toLocaleLowerCase();
   var fileExtension = [
-    '.json',
-    '.html',
-    '.xml',
-    '.opf',
-    '.ncx',
-    '.css',
-    'mimetype',
-    '.epub',
+    ".json",
+    ".html",
+    ".xml",
+    ".opf",
+    ".ncx",
+    ".css",
+    "mimetype",
+    ".epub",
   ];
   var fileInfo = {
-    isDirectory: !fileExtension.find(x => name.indexOf(x) !== -1),
+    isDirectory: !fileExtension.find((x) => name.indexOf(x) !== -1),
     folderPath:
-      path.split('/').length > 1 &&
-      fileExtension.find(x => name.indexOf(x) !== -1)
+      path.split("/").length > 1 &&
+      fileExtension.find((x) => name.indexOf(x) !== -1)
         ? path
-            .split('/')
+            .split("/")
             .reverse()
             .filter((x, index) => index > 0)
             .reverse()
-            .join('/')
+            .join("/")
         : path,
   };
   return fileInfo;
@@ -72,18 +72,19 @@ export default class EpubBuilder {
     progress: number,
     epubFile: string,
     operation:
-      | 'constructEpub'
-      | 'SaveFile'
-      | 'LoadingFile'
-      | 'Zip'
-      | 'Unzip'
-      | 'Reading',
+      | "constructEpub"
+      | "SaveFile"
+      | "LoadingFile"
+      | "Zip"
+      | "Unzip"
+      | "Reading"
+      | "Finished"
   ) => void;
 
   public onSaveProgress?: (
     progress: number,
     epubFile: string,
-    operation: 'constructEpub' | 'SaveFile',
+    operation: "constructEpub" | "SaveFile" | "Finished"
   ) => Promise<void>;
 
   /*
@@ -92,7 +93,7 @@ export default class EpubBuilder {
   constructor(settings: EpubSettings, destinationFolderPath?: string) {
     this.settings = settings;
     this.fileName = this.settings.fileName ?? this.settings.title;
-    this.tempOutputPath = fs.cacheDirectory + 'output/';
+    this.tempOutputPath = fs.cacheDirectory + "output/";
     this.outputPath = destinationFolderPath
       ? getFolderPath(destinationFolderPath)
       : undefined;
@@ -133,7 +134,7 @@ export default class EpubBuilder {
     */
   public async addChapter(epubChapter: EpubChapter) {
     if (!this.prepared || !this.settings.chapters) {
-      throw new Error('Please run the prepare method first');
+      throw new Error("Please run the prepare method first");
     }
     this.settings.chapters.push(epubChapter);
   }
@@ -159,10 +160,10 @@ export default class EpubBuilder {
       await validateDir(this.tempOutputPath);
       await zip(this.tempPath, tempOutputFile);
 
-      await fs.getContentUriAsync(tempOutputFile).then(async contentUri => {
+      await fs.getContentUriAsync(tempOutputFile).then(async (contentUri) => {
         await moveFile(contentUri, outputFile, {
           replaceIfDestinationExists: true,
-        }).catch(e => console.log(e, contentUri, outputFile));
+        }).catch((e) => console.log(e, contentUri, outputFile));
       });
     }
 
@@ -179,11 +180,11 @@ export default class EpubBuilder {
       this.outputPath = folder.uri;
       return;
     }
-    throw new Error('No permissions to access destination folder granted.');
+    throw new Error("No permissions to access destination folder granted.");
   }
 
   private async createTempFolder() {
-    this.tempPath = fs.cacheDirectory + 'epubCreation/' + this.fileName;
+    this.tempPath = fs.cacheDirectory + "epubCreation/" + this.fileName;
     await validateDir(this.tempPath);
 
     if (!this.outputPath) {
@@ -192,24 +193,24 @@ export default class EpubBuilder {
   }
 
   public async populate() {
-    var overrideFiles = ['toc.ncx', 'toc.html', '.opf', '.json'];
+    var overrideFiles = ["toc.ncx", "toc.html", ".opf", ".json"];
     const epub = new EpubFile(this.settings);
-    const files = await epub.constructEpub(async progress => {
+    const files = await epub.constructEpub(async (progress) => {
+        EpubBuilder.onProgress?.(this.dProgress, this.fileName, "constructEpub");
       if (this.onSaveProgress) {
-        await this.onSaveProgress?.(progress, this.fileName, 'constructEpub');
+        await this.onSaveProgress?.(progress, this.fileName, "constructEpub");
       }
     });
 
     this.dProgress = 0;
-    // console.log(files);
 
     var len = files.length + 1;
     for (var i = 0; i < files.length; i++) {
       this.dProgress = (i / parseFloat(len.toString())) * 100;
       const file = files[i];
-      var path = this.tempPath + '/' + file.path;
+      var path = this.tempPath + "/" + file.path;
       if (
-        overrideFiles.find(f => file.path.indexOf(f) !== -1) &&
+        overrideFiles.find((f) => file.path.indexOf(f) !== -1) &&
         (await exists(path))
       ) {
         await unlink(path);
@@ -220,26 +221,18 @@ export default class EpubBuilder {
       }
       if (!(await exists(path))) {
         if (file.format) {
-          await validateDir(this.tempPath + '/OEBPS/images');
-          // await writeFile(path, file.content, {
-          //   encoding: 'base64',
-          //   mimeType: file.format,
-          // });
-          console.log(file.path);
-
+          await validateDir(this.tempPath + "/OEBPS/images");
           await fs.downloadAsync(file.content, path);
         } else {
           await writeFile(path, file.content);
         }
       }
       if (this.outputPath) {
-        EpubBuilder.onProgress?.(this.dProgress, this.fileName, 'SaveFile');
+        const operation =
+          Math.round(this.dProgress) === 100 ? "Finished" : "SaveFile";
+        EpubBuilder.onProgress?.(this.dProgress, this.fileName, operation);
         if (this.onSaveProgress) {
-          await this.onSaveProgress?.(
-            this.dProgress,
-            this.fileName,
-            'SaveFile',
-          );
+          await this.onSaveProgress?.(this.dProgress, this.fileName, operation);
         }
       }
     }
@@ -257,3 +250,4 @@ export default class EpubBuilder {
   //     return await EpubLoader(epubPath, RNFS, localOnProgress);
   //   }
 }
+

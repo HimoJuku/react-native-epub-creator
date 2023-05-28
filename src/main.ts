@@ -1,7 +1,12 @@
-import EpubFile, { EpubChapter, EpubSettings } from "@cd-z/epub-constructor";
+import EpubFile, {
+  EpubChapter,
+  EpubSettings,
+  File,
+} from "@cd-z/epub-constructor";
 import * as fs from "expo-file-system";
 import { zip } from "react-native-zip-archive";
 import {
+  copyFile,
   exists,
   mkdir,
   moveFile,
@@ -57,6 +62,10 @@ const checkFile = (path: string) => {
 const getFolderPath = (path: string) => {
   var file = checkFile(path);
   return file.folderPath;
+};
+
+const isInternalStorage = (path: string) => {
+  return /^\/[a-z]+(?=\:)|^c[a-z]+(?=\:)|^f[a-z]+(?=\:)/.test(path.trim());
 };
 
 export default class EpubBuilder {
@@ -163,7 +172,9 @@ export default class EpubBuilder {
       await fs.getContentUriAsync(tempOutputFile).then(async (contentUri) => {
         await moveFile(contentUri, outputFile, {
           replaceIfDestinationExists: true,
-        }).catch((e) => console.log(e, contentUri, outputFile));
+        }).catch((e) => {
+          throw e;
+        });
       });
     }
 
@@ -195,8 +206,8 @@ export default class EpubBuilder {
   public async populate() {
     var overrideFiles = ["toc.ncx", "toc.html", ".opf", ".json"];
     const epub = new EpubFile(this.settings);
-    const files = await epub.constructEpub(async (progress) => {
-        EpubBuilder.onProgress?.(this.dProgress, this.fileName, "constructEpub");
+    const files: File = await epub.constructEpub(async (progress) => {
+      EpubBuilder.onProgress?.(this.dProgress, this.fileName, "constructEpub");
       if (this.onSaveProgress) {
         await this.onSaveProgress?.(progress, this.fileName, "constructEpub");
       }
@@ -220,9 +231,13 @@ export default class EpubBuilder {
         await validateDir(path);
       }
       if (!(await exists(path))) {
-        if (file.format) {
-          await validateDir(this.tempPath + "/OEBPS/images");
-          await fs.downloadAsync(file.content, path);
+        await validateDir(this.tempPath + "/OEBPS/images");
+        if (file.isImage) {
+          if (isInternalStorage(file.content)) {
+            await copyFile(file.content, path);
+          } else {
+            await fs.downloadAsync(file.content, path);
+          }
         } else {
           await writeFile(path, file.content);
         }

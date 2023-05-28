@@ -136,7 +136,6 @@ export default class EpubBuilder {
       throw new Error('Please run the prepare method first');
     }
     this.settings.chapters.push(epubChapter);
-    await this.createTempFolder();
   }
 
   /*

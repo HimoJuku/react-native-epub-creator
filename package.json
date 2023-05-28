@@ -1,5 +1,5 @@
 {
-  "name": "react-native-epub-creator",
+  "name": "@cd-z/react-native-epub-creator",
   "version": "1.2.3",
   "description": "This react-native library create epub file for android and IOS",
   "main": "index.ts",
@@ -45,8 +45,8 @@
     "lib/"
   ],
   "dependencies": {
-    "epub-constructor": "^1.0.8",
+    "expo-file-system": "^15.2.2",
     "react-native-zip-archive": "^6.0.3",
-    "uuid": "^3.4.0"
+    "react-native-saf-x": "^2.2.1"
   }
 }

@@ -235,8 +235,8 @@ export default class EpubBuilder {
         await validateDir(path);
       }
       if (!(await exists(path))) {
-        await validateDir(this.tempPath + "/OEBPS/images");
         if (file.isImage) {
+          await validateDir(this.tempPath + "/OEBPS/images");
           if (isInternalStorage(file.content)) {
             await copyFile(file.content, path);
           } else {

@@ -2,21 +2,15 @@
 
 ## Installation
 
+These packages have to be installed manually, since the autolink doesn't work automatically.
 ```sh
-npm install react-native-epub-creator
+// if this is your first expo reliant package
+npx install-expo-modules@latest
+
+npm i react-native-saf-x
+npm i react-native-zip-archive --save
 ```
 
-```sh
-// this is importend as the autolink would not work
-// if you dose not install this manyally
-npm install react-native-zip-archive
-```
-
-```sh
-// the library best work with react-native-fs 
-// but you could use any other library instead.
-npm install react-native-fs
-```
 ### IOS
 
 ```sh
@@ -31,16 +25,17 @@ nothing to do
 
 ## Usage
 
-### Create and Epub
-```js
+### Create an Epub
+```ts
 import EpubBuilder, { FsSettings, ReadDirItem, EpubChapter, EpubSettings, EpubLoader, getValidFileNameByTitle } from 'react-native-epub-creator';
-// the library best work with react-native-fs but you could use your own library instead
-import * as RNFS from 'react-native-fs';
-   const [progress, setProgress] = React.useState(0)
-   EpubBuilder.onProgress = (progress, file)=> {
-      setProgress(progress)
-    }
-     var epub = new EpubBuilder({
+
+  // Can be used to visualize the progress
+  const [progress, setProgress] = React.useState('');
+  EpubBuilder.onProgress = (progress, file, operation) => {
+    setProgress(Math.round(progress) + '  |  ' + file + '  |  ' + operation);
+  };
+
+  var epub = new EpubBuilder({
       title: "example",
       fileName: getValidFileNameByTitle("examplefile-%1"), // optional, it will take title if not set
       language: "en",
@@ -50,6 +45,7 @@ import * as RNFS from 'react-native-fs';
           width: "100%"
         }
       },
+      // If chapters are defined, epub.save() can instantly be called
       chapters: [{
         title: "Air born",
         htmlBody: "<p>this is chapter 1</p>"
@@ -57,17 +53,28 @@ import * as RNFS from 'react-native-fs';
         title: "chapter 2",
         htmlBody: "<p>this is chapter 2</p>"
       }]
-    }, RNFS.DownloadDirectoryPath, RNFS);
-    try{     
-      // save and create the .epub file
-      var epubFilePath = await epub.save();
-    }catch(error){
-     // remove the temp created folder
-     await epub.discardChanges();
-    }
+    }, 
+      // Optional path to destination folder
+      // Opens a folder picker if undefined
+      RNFS.DownloadDirectoryPath
+  );
+  try{     
+    await epub.prepare();
+    await epub.addChapter({
+      title: 'CH 1',
+      htmlBody: '<p>Some content</p>',
+    });
+    await epub
+      .save()
+      .then((value: string) => console.log(value))
+  }catch(error){
+   // remove the temp created folder
+   await epub.discardChanges();
+  }
 ```
 
 ### Read an Existing Epub file
+#### Currently not supported
 ```js
   var path = RNFS.DownloadDirectoryPath +"/example.epub";
   var localProgress=(progress, file)=> {
@@ -90,52 +97,7 @@ import * as RNFS from 'react-native-fs';
  
 ```
 
-### Create your own File handler
-if you would like to use your own file handler you could just implement `FsSettings` interface
-```ja
-const downloadFileModule = NativeModules.DownloadFileModule;
-class Reader implements FsSettings {
-    async mkdir(filePath: string) {
-        await downloadFileModule.makeDir(filePath);
-    }
 
-    async writeFile(filepath: string, content: string, encodingOrOptions?: any) {
-        await downloadFileModule.write(content, null, null, filepath, false);
-    }
-
-    async unlink(filePath: string) {
-        await downloadFileModule.deleteFile(filePath, true);
-    }
-
-    async exists(filePath: string) {
-        return (await downloadFileModule.exists(filePath)) as boolean;
-    }
-
-    async readFile(filePath: string, encodingOrOptions?: any) {
-        return await downloadFileModule.getFileContent(filePath)
-    }
-
-    async readDir(filePath: string) {
-        try {
-            var str = (await downloadFileModule.getDirInfo(filePath)) as string;
-            var infos = JSON.parse(str) as { path: string, isDirectory: boolean }[];
-            return infos.map(x => {
-                return {
-                    path: x.path,
-                    isDirectory: () => x.isDirectory,
-                    isFile: () => !x.isDirectory
-                } as ReadDirItem
-            });
-        } catch (error) {
-            console.log(error);
-            return [] as ReadDirItem[];
-        }
-    }
-
-}
-
-const RNFS = new Reader();
-```
 
 ## License
 

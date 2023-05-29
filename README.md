@@ -10,6 +10,9 @@ npx install-expo-modules@latest
 npm i react-native-saf-x
 npm i react-native-zip-archive --save
 ```
+```sh
+npm i @cd-z/react-native-epub-creator
+```
 
 ### IOS
 

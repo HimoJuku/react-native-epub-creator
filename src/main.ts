@@ -182,6 +182,9 @@ export default class EpubBuilder {
       await this.discardChanges();
     }
 
+    this.dProgress = 100;
+    EpubBuilder.onProgress?.(this.dProgress, epubFileName, "Finished");
+
     return outputFile;
   }
 
@@ -205,11 +208,12 @@ export default class EpubBuilder {
 
   public async populate() {
     var overrideFiles = ["toc.ncx", "toc.html", ".opf", ".json"];
+    const epubFileName = getEpubfileName(this.fileName);
     const epub = new EpubFile(this.settings);
     const files: File = await epub.constructEpub(async (progress) => {
-      EpubBuilder.onProgress?.(this.dProgress, this.fileName, "constructEpub");
+      EpubBuilder.onProgress?.(this.dProgress, epubFileName, "constructEpub");
       if (this.onSaveProgress) {
-        await this.onSaveProgress?.(progress, this.fileName, "constructEpub");
+        await this.onSaveProgress?.(progress, epubFileName, "constructEpub");
       }
     });
 
@@ -217,7 +221,7 @@ export default class EpubBuilder {
 
     var len = files.length + 1;
     for (var i = 0; i < files.length; i++) {
-      this.dProgress = (i / parseFloat(len.toString())) * 100;
+      this.dProgress = ((i + 1) / parseFloat(len.toString())) * 100;
       const file = files[i];
       var path = this.tempPath + "/" + file.path;
       if (
@@ -243,11 +247,9 @@ export default class EpubBuilder {
         }
       }
       if (this.outputPath) {
-        const operation =
-          Math.round(this.dProgress) === 100 ? "Finished" : "SaveFile";
-        EpubBuilder.onProgress?.(this.dProgress, this.fileName, operation);
+        EpubBuilder.onProgress?.(this.dProgress, epubFileName, "SaveFile");
         if (this.onSaveProgress) {
-          await this.onSaveProgress?.(this.dProgress, this.fileName, operation);
+          await this.onSaveProgress?.(this.dProgress, epubFileName, "SaveFile");
         }
       }
     }

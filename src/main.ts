@@ -3,7 +3,7 @@ import EpubFile, {
   EpubSettings,
   File,
 } from '@cd-z/epub-constructor';
-import {zip} from 'react-native-zip-archive';
+import { zip } from 'react-native-zip-archive';
 import {
   copyFile,
   exists,
@@ -12,14 +12,10 @@ import {
   unlink,
   writeFile,
 } from 'react-native-saf-x';
-import {Dirs} from 'react-native-file-access';
+import { Dirs } from 'react-native-file-access';
 
 const getEpubfileName = (name: string) => {
-  return name.replace(/\..*$/g, '.epub');
-};
-const getZipFileName = (name: string) => {
-  const replace = name.replace(/\..*$/g, '');
-  return replace + '.zip';
+  return name.replace(/\..*$/g, '') + '.epub';
 };
 
 const validateDir = async (path: string) => {
@@ -238,6 +234,8 @@ export default class EpubBuilder {
       if (!(await exists(path))) {
         if (file.isImage) {
           await validateDir(this.tempPath + '/OEBPS/images');
+          console.log('Image', file, isInternalStorage(file.content), path);
+
           if (isInternalStorage(file.content)) {
             await copyFile(file.content, path);
           } else {

@@ -68,7 +68,7 @@ const isInternalStorage = (path: string) => {
 };
 
 export default class EpubBuilder {
-  private settings: EpubSettings;
+  private epub: EpubFile;
   private outputPath?: string;
   private tempPath?: string;
   private tempOutputPath: string;
@@ -99,8 +99,8 @@ export default class EpubBuilder {
     destinationFolderPath: destination to the folder, You could use react-native-fs RNFS.DownloadDirectoryPath
     */
   constructor(settings: EpubSettings, destinationFolderPath?: string) {
-    this.settings = settings;
-    this.fileName = this.settings.fileName ?? this.settings.title;
+    this.epub = new EpubFile(settings);
+    this.fileName = this.epub.epubSettings.fileName!;
     this.tempOutputPath = Dirs.CacheDir + '/output/';
     this.outputPath = destinationFolderPath
       ? getFolderPath(destinationFolderPath)
@@ -108,7 +108,7 @@ export default class EpubBuilder {
   }
 
   public getEpubSettings() {
-    return this.settings;
+    return this.epub.epubSettings;
   }
 
   /*
@@ -118,8 +118,8 @@ export default class EpubBuilder {
   public async prepare() {
     this.prepared = true;
     await this.createTempFolder();
-    if (!this.settings.chapters) {
-      this.settings.chapters = [] as EpubChapter[];
+    if (!this.epub.epubSettings.chapters) {
+      this.epub.epubSettings.chapters = [] as EpubChapter[];
     }
     return this;
   }
@@ -141,10 +141,10 @@ export default class EpubBuilder {
         add a new Chapter
     */
   public async addChapter(epubChapter: EpubChapter) {
-    if (!this.prepared || !this.settings.chapters) {
+    if (!this.prepared || !this.epub.epubSettings.chapters) {
       throw new Error('Please run the prepare method first');
     }
-    this.settings.chapters.push(epubChapter);
+    this.epub.epubSettings.chapters.push(epubChapter);
   }
 
   /*
@@ -206,7 +206,8 @@ export default class EpubBuilder {
   public async populate() {
     var overrideFiles = ['toc.ncx', 'toc.html', '.opf', '.json'];
     const epubFileName = getEpubfileName(this.fileName);
-    const epub = new EpubFile(this.settings);
+    const epub = new EpubFile(this.epub.epubSettings);
+
     const files: File[] = await epub.constructEpub(async (progress: number) => {
       EpubBuilder.onProgress?.(this.dProgress, epubFileName, 'constructEpub');
       if (this.onSaveProgress) {
@@ -234,8 +235,6 @@ export default class EpubBuilder {
       if (!(await exists(path))) {
         if (file.isImage) {
           await validateDir(this.tempPath + '/OEBPS/images');
-          console.log('Image', file, isInternalStorage(file.content), path);
-
           if (isInternalStorage(file.content)) {
             await copyFile(file.content, path);
           } else {

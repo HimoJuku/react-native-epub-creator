@@ -12,7 +12,7 @@ import {
   unlink,
   writeFile,
 } from 'react-native-saf-x';
-import { Dirs } from 'react-native-file-access';
+import { Dirs, FileSystem } from 'react-native-file-access';
 
 const getEpubfileName = (name: string) => {
   return name.replace(/\..*$/g, '') + '.epub';
@@ -238,6 +238,7 @@ export default class EpubBuilder {
           if (isInternalStorage(file.content)) {
             await copyFile(file.content, path);
           } else {
+            await FileSystem.fetch(file.content, { path });
             // await fs.downloadAsync(file.content, path);
           }
         } else {

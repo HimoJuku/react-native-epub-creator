@@ -45,9 +45,13 @@
     "lib/"
   ],
   "dependencies": {
+    "@cd-z/epub-constructor": "^3.0.0",
+    "@types/bun": "^1.2.10",
+    "expo-document-picker": "^13.0.3",
+    "expo-file-system": "^18.0.12",
+    "expo-sharing": "^13.0.1",
     "react-native-file-access": "^3.1.0",
-    "react-native-zip-archive": "^6.0.3",
     "react-native-saf-x": "^2.2.1",
-    "@cd-z/epub-constructor": "^3.0.0"
+    "react-native-zip-archive": "^6.0.3"
   }
 }

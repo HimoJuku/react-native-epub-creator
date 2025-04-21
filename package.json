@@ -9,7 +9,10 @@
     "epub-creator",
     "react-native-epub-creator"
   ],
-  "repository": "https://github.com/kaze-desu/react-native-epub-creator",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kaze-desu/react-native-epub-creator.git"
+  },
   "author": "Alen Toma & Patrick Loser",
   "license": "MIT",
   "bugs": {
@@ -50,5 +53,8 @@
     "expo-document-picker": "^13.0.3",
     "expo-file-system": "^18.0.12",
     "react-native-zip-archive": "^6.0.3"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
   }
 }

@@ -1,5 +1,10 @@
 # react-native-epub-creator
 
+A React Native library for creating and manipulating EPUB files. It provides a simple API to create EPUB files, add chapters, and save them to the device's file system.
+
+Compared to original [react-native-epub-creator](https://github.com/CD-Z/react-native-epub-creator), this library is a fork that has been modified to work with Expo and React Native 0.76.
+
+Also removed images and script support, since it was not working and not needed for my use case.
 ## Installation
 
 These packages have to be installed manually, since the autolink doesn't work automatically.
@@ -7,11 +12,12 @@ These packages have to be installed manually, since the autolink doesn't work au
 // if this is your first expo reliant package
 npx install-expo-modules@latest
 
-npm i react-native-saf-x
 npm i react-native-zip-archive --save
+npm i expo-document-picker --save
+npm i expo-file-system --save
 ```
 ```sh
-npm i @cd-z/react-native-epub-creator
+npm i @kaze-desu/react-native-epub-creator
 ```
 
 ### IOS

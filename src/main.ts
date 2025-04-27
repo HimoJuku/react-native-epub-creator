@@ -203,10 +203,7 @@ export default class EpubBuilder {
     }
     
     // Get files from epub constructor
-    const files = await this.epub.constructEpub(async progress => {
-      this.dProgress = progress;
-      EpubBuilder.onProgress?.(progress, this.fileName, 'constructEpub');
-    });
+    const files = await this.epub.constructEpub();
     
     console.log(`Processing ${files.length} EPUB files...`);
     

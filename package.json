@@ -1,6 +1,6 @@
 {
-  "name": "@kaze-desu/react-native-epub-creator",
-  "version": "1.0.0",
+  "name": "@himojuku/react-native-epub-creator",
+  "version": "1.0.3",
   "description": "This react-native library create epub file for android and IOS",
   "main": "index.ts",
   "keywords": [
@@ -11,14 +11,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kaze-desu/react-native-epub-creator.git"
+    "url": "git+https://github.com/HimoJuku/react-native-epub-creator.git"
   },
   "author": "Alen Toma & Patrick Loser",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/kaze-desu/react-native-epub-creator/issues"
+    "url": "https://github.com/HimoJuku/react-native-epub-creator/issues"
   },
-  "homepage": "https://github.com/kaze-desu/react-native-epub-creator#readme",
+  "homepage": "https://github.com/HimoJuku/react-native-epub-creator#readme",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },

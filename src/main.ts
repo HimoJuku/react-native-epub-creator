@@ -3,11 +3,10 @@ import EpubFile, {
 } from '@himojuku/epub-constructor';
 import JSZip from 'jszip';
 import { File, Directory, Paths } from 'expo-file-system/next';
-
 /**
- * Converts a string into a valid filename
- * @param name - The original string
- * @returns A filename-safe string
+ * Utility function to validate and convert a string into a valid file name
+ * @param name - The name to be validated and converted into a valid file name
+ * @returns A valid file name string, replacing invalid characters with underscores
  */
 export const getValidFileNameByTitle = (name: string): string => {
   if (!name || typeof name !== 'string') {
@@ -16,70 +15,45 @@ export const getValidFileNameByTitle = (name: string): string => {
   return name.replace(/[^a-zA-Z0-9]/g, '_');
 };
 
-/**
- * Ensures a directory exists, creating it if necessary
- * @param path - Directory path
- * @returns The directory object or null if path is invalid
- */
 const validateDir = async (path: string): Promise<Directory | null> => {
   if (!path) return null;
-
   try {
     const dir = new Directory(path);
     if (!dir.exists) {
       dir.create();
-      console.log('Created directory:', path);
     }
     return dir;
   } catch (error) {
-    console.error("Error ensuring directory exists:", path, error);
+    console.error(`Failed to validate directory: ${path}`, error);
     throw error;
   }
 };
 
-/**
- * Ensures the parent directory of a file exists
- * @param filePath - Path to the file
- */
 const validateParentDir = async (filePath: string): Promise<void> => {
   const dirPath = filePath.substring(0, filePath.lastIndexOf('/') + 1);
   await validateDir(dirPath);
 };
 
-/**
- * Removes a directory if it exists
- * @param path - Directory path to remove
- */
 const removeDir = async (path: string) => {
   if (!path) return;
-
   try {
     const dir = new Directory(path);
     if (dir.exists) {
       dir.delete();
-      console.log('Removed directory:', path);
     }
   } catch (error) {
-    console.error("Error removing directory:", error);
+    console.error(`Failed to remove directory: ${path}`, error);
   }
 };
 
-/**
- * Creates a directory structure recursively
- * @param fullPath - Complete path to create
- */
 const createDirectoryRecursively = async (fullPath: string) => {
-  // Ensure path is within application sandbox
   if (!fullPath.startsWith(Paths.document.uri) && !fullPath.startsWith(Paths.cache.uri)) {
     throw new Error('Path must be within application directories');
   }
-
-  // Create directories level by level starting from application directory
   const basePath = fullPath.startsWith(Paths.document.uri) ?
     Paths.document.uri : Paths.cache.uri;
   const relativePath = fullPath.substring(basePath.length);
   const segments = relativePath.split('/').filter(segment => segment.length > 0);
-
   let currentPath = basePath;
   for (const segment of segments) {
     currentPath += segment + '/';
@@ -127,11 +101,6 @@ export default class EpubBuilder {
 
     // Use document directory as temporary output location
     this.tempOutputPath = Paths.document.uri + 'temp_epub_output/';
-
-    console.log('Constructor paths:', {
-      outputPath: this.outputPath,
-      tempOutputPath: this.tempOutputPath
-    });
   }
 
   /**
@@ -177,35 +146,26 @@ export default class EpubBuilder {
    * Creates temporary folders needed for the EPUB creation process
    */
   private async createTempFolder() {
-    // Create safe filename
     const safeFileName = this.fileName.replace(/[^a-zA-Z0-9]/g, '_');
-    
-    // Use application document directory as base
+
     this.tempPath = Paths.document.uri + 'epub_creation/' + safeFileName + '/';
-    console.log('Temp path:', this.tempPath);
-    
-    // Create directory structure recursively
+
     await createDirectoryRecursively(this.tempPath);
-    
-    // Create temporary output folder
+
     this.tempOutputPath = Paths.document.uri + 'temp_epub_output/';
     await createDirectoryRecursively(this.tempOutputPath);
   }
-  
+
   /**
    * Populates the temporary directory with EPUB content files
    */
   private async populate(): Promise<void> {
-    console.log('Populating EPUB content...');
-    
     if (!this.tempPath) {
       throw new Error('Temporary path not created, please call prepare() first');
     }
     
     // Get files from epub constructor
     const files = await this.epub.constructEpub();
-    
-    console.log(`Processing ${files.length} EPUB files...`);
     
     // Process each file
     for (let i = 0; i < files.length; i++) {
@@ -257,7 +217,6 @@ export default class EpubBuilder {
         }
         // Handle text content files
         else if (typeof file.content === 'string') {
-          console.log(`Writing file: ${fullPath}`);
           const targetFile = new File(fullPath);
           if (targetFile.exists) {
             targetFile.delete();
@@ -283,11 +242,9 @@ export default class EpubBuilder {
       const scriptFile = new File(scriptPath);
       if (scriptFile.exists) {
         scriptFile.delete();
-        console.log(`Removed unnecessary script.js file: ${scriptPath}`);
       }
     }
 
-    console.log('EPUB content population complete');
   }
 
   /**
@@ -295,7 +252,6 @@ export default class EpubBuilder {
    * @returns The full path to the saved EPUB file
    */
   public async save(): Promise<string> {
-    console.log('Saving EPUB file...');
     const epubFileName = `${this.fileName}.epub`;
 
     if (!this.prepared) {
@@ -464,7 +420,7 @@ export default class EpubBuilder {
         }
 
         console.log(`Found ${chapterFiles.length} chapter files:`, chapterFiles);
-        
+
         // Find OPF file
         const opfFilePattern = /\.opf$/;
         const epubDir = new Directory(epubPath);
@@ -483,7 +439,6 @@ export default class EpubBuilder {
             return;
         }
 
-        console.log(`Fixing OPF file: ${opfPath}`);
         const opfFile = new File(opfPath);
         let content = opfFile.text();
         
@@ -563,12 +518,10 @@ export default class EpubBuilder {
 
         // Save modified OPF file
         opfFile.write(content);
-        console.log('OPF file fixing complete');
 
         // Fix NCX file
         const ncxPath = `${epubPath}toc.ncx`;
         if (new File(ncxPath).exists) {
-            console.log('Fixing NCX file...');
             const ncxFile = new File(ncxPath);
             let ncxContent = ncxFile.text();
 
@@ -588,7 +541,6 @@ export default class EpubBuilder {
             // Replace navMap section
             ncxContent = ncxContent.replace(/<navMap>[\s\S]*?<\/navMap>/, navMap);
             ncxFile.write(ncxContent);
-            console.log('NCX file fixing complete');
         }
     } catch (error) {
         console.error('Error fixing EPUB structure:', error);
